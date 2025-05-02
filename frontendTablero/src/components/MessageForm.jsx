@@ -14,6 +14,8 @@ import {
 } from "@mui/material";
 import { Send, Refresh } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
+import { sendWebSocketMessage } from "../socket"; 
+
 
 function MessageForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,15 +36,19 @@ function MessageForm() {
 
   const onSubmit = (values) => {
     setIsSubmitting(true);
-
-    // Simulación de envío al tablero LED
-    console.log("Enviando mensaje al tablero LED:", values);
-
+  
+    const messageToSend = JSON.stringify(values); // 👈 ¡enviar como JSON!
+  
+    sendWebSocketMessage(messageToSend);
+  
+    console.log("Mensaje JSON enviado al WebSocket:", messageToSend);
+  
     setTimeout(() => {
       setIsSubmitting(false);
       reset();
-    }, 1500);
+    }, 500);
   };
+  
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

@@ -15,6 +15,7 @@ import {
   Divider,
 } from "@mui/material";
 import { red } from "@mui/material/colors";
+import MessagePred from "./components/MessagePred";
 import MessageForm from "./components/MessageForm";
 import MessageHistory from "./components/MessageHistory";
 import Settings from "./components/Settings";
@@ -23,6 +24,8 @@ import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
+import { useEffect } from "react";
+import { connectWebSocket } from "./socket"; // 👈 importar conexión
 
 const theme = createTheme({
   palette: {
@@ -57,6 +60,12 @@ function App() {
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
+
+  useEffect(() => {
+    connectWebSocket("poneripdelesp32"); // 👈 PON AQUÍ LA IP DE TU ESP32
+  }, []);
+
+
 
   return (
     <ThemeProvider theme={theme}>
@@ -141,14 +150,18 @@ function App() {
                   variant="fullWidth"
                   centered
                 >
+                  <Tab label="Mensajes Predefinidos" />
                   <Tab label="Historial de Mensajes" />
                   <Tab label="Configuración" />
                 </Tabs>
                 <Divider />
                 <TabPanel value={tabValue} index={0}>
-                  <MessageHistory />
+                  <MessagePred />
                 </TabPanel>
                 <TabPanel value={tabValue} index={1}>
+                  <MessageHistory />
+                </TabPanel>
+                <TabPanel value={tabValue} index={2}>
                   <Settings />
                 </TabPanel>
               </Paper>
