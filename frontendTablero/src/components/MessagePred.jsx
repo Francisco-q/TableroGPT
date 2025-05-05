@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { Refresh, Send } from "@mui/icons-material";
 import { sendWebSocketMessage } from "../socket"; // 👈 IMPORTANTE
+import axios from "axios"; 
 
 // Mensajes predefinidos
 const initialMessages = [
@@ -46,19 +47,40 @@ const initialMessages = [
 ];
 
 function MessagePred() {
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState([]);
 
-  const resendMessage = (messageData) => {
-    console.log("Enviando mensaje predefinido:", messageData);
-
-    const payload = {
-      message: messageData.text,
-      color: messageData.color,
-      effect: messageData.effect,
-      speed: 5, // Puedes ajustar si quieres que algunos sean más lentos o rápidos
+  useEffect(() => {
+    const fetchPredefinedMessages = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/predefined-messages');
+        setMessages(response.data);
+      } catch (error) {
+        console.error("Error al obtener mensajes predefinidos:", error);
+      }
     };
+    fetchPredefinedMessages();
+  }, []);
 
-    sendWebSocketMessage(JSON.stringify(payload));
+  const resendMessage = async (messageData) => {
+    try {
+      await axios.post('http://localhost:5000/api/messages', {
+        message: messageData.text,
+        color: messageData.color,
+        effect: messageData.effect,
+        speed: messageData.speed || 5,
+        is_predefined: true
+      });
+      // Opcional: Enviar al ESP32 directamente
+      const payload = {
+        message: messageData.text,
+        color: messageData.color,
+        effect: messageData.effect,
+        speed: messageData.speed || 5
+      };
+      sendWebSocketMessage(JSON.stringify(payload));
+    } catch (error) {
+      console.error("Error al enviar mensaje predefinido:", error);
+    }
   };
 
   const formatDate = (date) => {

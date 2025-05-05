@@ -15,7 +15,7 @@ import {
 import { Send, Refresh } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { sendWebSocketMessage } from "../socket"; 
-
+import axios from 'axios';
 
 function MessageForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,15 +34,26 @@ function MessageForm() {
     },
   });
 
-  const onSubmit = (values) => {
+  const onSubmit = async (values) => {
     setIsSubmitting(true);
   
-    const messageToSend = JSON.stringify(values); // 👈 ¡enviar como JSON!
+    try {
+      // Enviar al backend
+      await axios.post('http://localhost:5000/api/messages', {
+        message: values.message,
+        color: values.color,
+        effect: values.effect,
+        speed: values.speed,
+        is_predefined: false
+      });
   
-    sendWebSocketMessage(messageToSend);
-  
-    console.log("Mensaje JSON enviado al WebSocket:", messageToSend);
-  
+      // Enviar al ESP32
+      const messageToSend = JSON.stringify(values);
+      sendWebSocketMessage(messageToSend);
+      console.log("Mensaje JSON enviado al WebSocket:", messageToSend);
+    } catch (error) {
+      console.error("Error al enviar el mensaje:", error);
+    }
     setTimeout(() => {
       setIsSubmitting(false);
       reset();

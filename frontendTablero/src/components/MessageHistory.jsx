@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import axios from "axios"
 import {
   Box,
   Typography,
@@ -45,11 +46,28 @@ const initialMessages = [
 ]
 
 function MessageHistory() {
-  const [messages, setMessages] = useState(initialMessages)
+  const [messages, setMessages] = useState([])
 
-  const resendMessage = (id) => {
-    console.log("Reenviando mensaje:", id)
-  }
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/messages');
+        setMessages(response.data);
+      } catch (error) {
+        console.error("Error al obtener mensajes:", error);
+      }
+    };
+    fetchMessages();
+  }, []);
+
+  const resendMessage = async (id) => {
+    try {
+      await axios.post(`http://localhost:5000/api/messages/${id}`);
+      console.log("Mensaje reenviado:", id);
+    } catch (error) {
+      console.error("Error al reenviar mensaje:", error);
+    }
+  };
 
   const formatDate = (date) => {
     return date.toLocaleString("es-CL", {
