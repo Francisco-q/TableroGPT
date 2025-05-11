@@ -3,3 +3,4 @@ venv/
 __pycache__/
 .env
 messages.db
+Backend/serviceAccountKey2.json

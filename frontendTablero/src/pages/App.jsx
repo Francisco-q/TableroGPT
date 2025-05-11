@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CssBaseline,
   ThemeProvider,
@@ -13,16 +13,19 @@ import {
   Tabs,
   Tab,
   Divider,
+  Button,
 } from "@mui/material";
+import LogoutIcon from '@mui/icons-material/Logout';
 import { red } from "@mui/material/colors";
-import MessageForm from "./components/MessageForm";
-import MessageHistory from "./components/MessageHistory";
-import Settings from "./components/Settings";
-import SystemStatus from "./components/SystemStatus";
+import MessageForm from "../components/MessageForm";
+import MessageHistory from "../components/MessageHistory";
+import Settings from "../components/Settings";
+import SystemStatus from "../components/SystemStatus";
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
+import { useNavigate } from "react-router-dom";
 
 const theme = createTheme({
   palette: {
@@ -53,10 +56,60 @@ function TabPanel(props) {
 
 function App() {
   const [tabValue, setTabValue] = useState(0);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (!token || !storedUser) {
+        navigate('/login');
+        return;
+      }
+      
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        navigate('/login');
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  if (loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <Typography variant="h6">Cargando...</Typography>
+        </Box>
+      </ThemeProvider>
+    );
+  }
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography>Cargando...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -83,10 +136,22 @@ function App() {
             </Box>
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               Control de Tablero LED - UTAL
-            </Typography>
-            <Typography variant="body2" color="inherit">
+            </Typography>            <Typography variant="body2" color="inherit" sx={{ mr: 2 }}>
               Proyecto de Gestión Tecnológica
             </Typography>
+            {user && (
+              <Typography variant="body2" color="inherit" sx={{ mr: 2 }}>
+                {user.nombre || user.email}
+              </Typography>
+            )}
+            <Button
+              color="inherit"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              size="small"
+            >
+              Cerrar Sesión
+            </Button>
           </Toolbar>
         </AppBar>
 
