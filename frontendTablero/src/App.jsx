@@ -300,6 +300,7 @@ function App() {
               </Paper>
             </Grid>
 
+
             {/* Columna derecha: Estado del Sistema */}
             <Grid item xs={12} md={4} width={"32.9%"}>
               <Paper
