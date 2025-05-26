@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CssBaseline,
   ThemeProvider,
@@ -13,8 +13,14 @@ import {
   Tabs,
   Tab,
   Divider,
+  IconButton,
+  MenuItem,
+  TextField,
 } from "@mui/material";
 import { red } from "@mui/material/colors";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CheckIcon from "@mui/icons-material/Check";
+import EditIcon from "@mui/icons-material/Edit";
 import MessagePred from "./components/MessagePred";
 import MessageForm from "./components/MessageForm";
 import MessageHistory from "./components/MessageHistory";
@@ -24,8 +30,8 @@ import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
-import { useEffect } from "react";
-import { connectWebSocket } from "./socket"; // 👈 importar conexión
+import { connectWebSocket } from "./socket"; 
+import WeeklyScheduler from "./components/WeeklyScheduler";
 
 const theme = createTheme({
   palette: {
@@ -54,18 +60,80 @@ function TabPanel(props) {
   );
 }
 
+const daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
 function App() {
   const [tabValue, setTabValue] = useState(0);
+  const [schedules, setSchedules] = useState([]);
+  const [editIdx, setEditIdx] = useState(null);
+  const [editData, setEditData] = useState({});
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
+  // Validar solapamiento y agregar mensaje programado
+  const handleAddSchedule = (newSchedule) => {
+    const overlap = schedules.some(s =>
+      s.day === newSchedule.day &&
+      (
+        (newSchedule.start < s.end && newSchedule.end > s.start)
+      )
+    );
+    if (overlap) {
+      alert("Ya existe un mensaje programado que se solapa con ese horario.");
+      return;
+    }
+    setSchedules((prev) => [...prev, newSchedule]);
+  };
+
+  // Eliminar mensaje programado
+  const handleDeleteSchedule = (idx) => {
+    setSchedules(prev => prev.filter((_, i) => i !== idx));
+    if (editIdx === idx) {
+      setEditIdx(null);
+      setEditData({});
+    }
+  };
+
+  // Guardar cambios editados
+  const handleSaveEdit = (idx) => {
+    // Validar solapamiento al guardar
+    const overlap = schedules.some((s, i) =>
+      i !== idx &&
+      s.day === editData.day &&
+      (editData.start < s.end && editData.end > s.start)
+    );
+    if (overlap) {
+      alert("Ya existe un mensaje programado que se solapa con ese horario.");
+      return;
+    }
+    setSchedules(prev => prev.map((item, i) => i === idx ? { ...item, ...editData } : item));
+    setEditIdx(null);
+    setEditData({});
+  };
+
+  // Iniciar edición
+  const handleStartEdit = (realIdx) => {
+    setEditIdx(realIdx);
+    setEditData({ ...schedules[realIdx] });
+  };
+
+  // Manejar cambios en los campos de edición
+  const handleEditField = (field, value) => {
+    setEditData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Ordenar los mensajes por día y hora
+  const sortedSchedules = [...schedules].sort((a, b) => {
+    const dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
+    if (dayDiff !== 0) return dayDiff;
+    return a.start.localeCompare(b.start);
+  });
+
   useEffect(() => {
-    connectWebSocket("poneripdelesp32"); // 👈 PON AQUÍ LA IP DE TU ESP32
+    connectWebSocket("192.168.1.122");
   }, []);
-
-
 
   return (
     <ThemeProvider theme={theme}>
@@ -117,6 +185,118 @@ function App() {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <MessageForm />
+                <WeeklyScheduler onSchedule={handleAddSchedule} />
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Mensajes programados:
+                  </Typography>
+                  {sortedSchedules.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      No hay mensajes programados.
+                    </Typography>
+                  )}
+                  {sortedSchedules.map((s, idx) => {
+                    // Buscar el índice real en schedules
+                    const realIdx = schedules.findIndex(
+                      item =>
+                        item.day === s.day &&
+                        item.start === s.start &&
+                        item.end === s.end &&
+                        item.message === s.message
+                    );
+                    return (
+                      <Paper key={idx} sx={{ p: 1, mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                        {editIdx === realIdx ? (
+                          <>
+                            <TextField
+                              select
+                              size="small"
+                              value={editData.day}
+                              onChange={e => handleEditField("day", e.target.value)}
+                              sx={{ width: 120, mr: 1 }}
+                            >
+                              {daysOrder.map(day => (
+                                <MenuItem key={day} value={day}>{day}</MenuItem>
+                              ))}
+                            </TextField>
+                            <TextField
+                              type="time"
+                              size="small"
+                              value={editData.start}
+                              onChange={e => handleEditField("start", e.target.value)}
+                              sx={{ width: 90, mr: 1 }}
+                              inputProps={{ step: 300 }}
+                            />
+                            <Typography sx={{ mx: 0.5 }}>-</Typography>
+                            <TextField
+                              type="time"
+                              size="small"
+                              value={editData.end}
+                              onChange={e => handleEditField("end", e.target.value)}
+                              sx={{ width: 90, mr: 1 }}
+                              inputProps={{ step: 300 }}
+                            />
+                            <TextField
+                              size="small"
+                              value={editData.message}
+                              onChange={e => handleEditField("message", e.target.value)}
+                              sx={{ flex: 1, mr: 1 }}
+                            />
+                            <IconButton color="success" onClick={() => handleSaveEdit(realIdx)}>
+                              <CheckIcon />
+                            </IconButton>
+                            <IconButton color="error" onClick={() => handleDeleteSchedule(realIdx)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </>
+                        ) : (
+                          <>
+                            <TextField
+                              select
+                              size="small"
+                              value={s.day}
+                              disabled
+                              sx={{ width: 120, mr: 1 }}
+                            >
+                              {daysOrder.map(day => (
+                                <MenuItem key={day} value={day}>{day}</MenuItem>
+                              ))}
+                            </TextField>
+                            <TextField
+                              type="time"
+                              size="small"
+                              value={s.start}
+                              disabled
+                              sx={{ width: 90, mr: 1 }}
+                              inputProps={{ step: 300 }}
+                            />
+                            <Typography sx={{ mx: 0.5 }}>-</Typography>
+                            <TextField
+                              type="time"
+                              size="small"
+                              value={s.end}
+                              disabled
+                              sx={{ width: 90, mr: 1 }}
+                              inputProps={{ step: 300 }}
+                            />
+                            <TextField
+                              size="small"
+                              value={s.message}
+                              disabled
+                              sx={{ flex: 1, mr: 1 }}
+                            />
+                            <IconButton color="primary" onClick={() => handleStartEdit(realIdx)}>
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton color="error" onClick={() => handleDeleteSchedule(realIdx)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </>
+                        )}
+                      </Paper>
+                    );
+                  })}
+                </Box>
               </Paper>
             </Grid>
 
@@ -167,15 +347,13 @@ function App() {
               </Paper>
             </Grid>
           </Grid>
-
-          
         </Container>
         <Box pt={4} mb={2}>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Desarrollado por: Juan Farias, Nestor Ramirez, Francisco Quevedo, Augusto Fuenzalida - Universidad de
-              Talca © 2025
-            </Typography>
-          </Box>
+          <Typography variant="body2" color="text.secondary" align="center">
+            Desarrollado por: Juan Farias, Nestor Ramirez, Francisco Quevedo, Augusto Fuenzalida - Universidad de
+            Talca © 2025
+          </Typography>
+        </Box>
       </Box>
     </ThemeProvider>
   );

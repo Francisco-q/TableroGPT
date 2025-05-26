@@ -89,9 +89,9 @@ function MessageForm() {
                   <MenuItem value="red">Rojo</MenuItem>
                   <MenuItem value="green">Verde</MenuItem>
                   <MenuItem value="blue">Azul</MenuItem>
-                  <MenuItem value="yellow">Amarillo</MenuItem>
                   <MenuItem value="white">Blanco</MenuItem>
                 </Select>
+
               )}
             />
             {errors.color && <FormHelperText>{errors.color.message}</FormHelperText>}
