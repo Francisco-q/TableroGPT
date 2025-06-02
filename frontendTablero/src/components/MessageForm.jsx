@@ -15,7 +15,7 @@ import {
 import { Send, Refresh } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { sendWebSocketMessage } from "../socket"; 
-
+import { publishMessage } from "../mqttClient";
 
 function MessageForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,7 +33,7 @@ function MessageForm() {
       speed: 5,
     },
   });
-
+/* 
   const onSubmit = (values) => {
     setIsSubmitting(true);
   
@@ -48,7 +48,22 @@ function MessageForm() {
       reset();
     }, 500);
   };
-  
+  */
+  const onSubmit = (values) => {
+  setIsSubmitting(true);
+
+  // Publicar a MQTT
+  publishMessage("panel/mensaje", values);
+  // Guardar la hora del último mensaje
+  localStorage.setItem("ultimaHoraMensaje", new Date().toISOString());
+
+  console.log("Mensaje enviado al panel:", values);
+
+  setTimeout(() => {
+    setIsSubmitting(false);
+    reset();
+  }, 500);
+};
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>

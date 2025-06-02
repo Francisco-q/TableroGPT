@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Refresh, Send } from "@mui/icons-material";
-import { sendWebSocketMessage } from "../socket"; // 👈 IMPORTANTE
+import { publishMessage } from "../mqttClient";
 
 // Mensajes predefinidos
 const initialMessages = [
@@ -48,7 +48,7 @@ const initialMessages = [
 function MessagePred() {
   const [messages, setMessages] = useState(initialMessages);
 
-  const resendMessage = (messageData) => {
+  /*const resendMessage = (messageData) => {
     console.log("Enviando mensaje predefinido:", messageData);
 
     const payload = {
@@ -59,6 +59,20 @@ function MessagePred() {
     };
 
     sendWebSocketMessage(JSON.stringify(payload));
+  };*/
+  const resendMessage = (messageData) => {
+    console.log("Enviando mensaje predefinido:", messageData);
+
+    const payload = {
+      message: messageData.text,
+      color: messageData.color,
+      effect: messageData.effect,
+      speed: 5,
+    };
+
+    publishMessage("panel/mensaje", payload);
+    localStorage.setItem("ultimaHoraMensaje", new Date().toISOString());
+
   };
 
   const formatDate = (date) => {
@@ -85,9 +99,20 @@ function MessagePred() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h6">Mensajes Predefinidos</Typography>
-        <Button startIcon={<Refresh />} size="small" onClick={() => window.location.reload()}>
+        <Button
+          startIcon={<Refresh />}
+          size="small"
+          onClick={() => window.location.reload()}
+        >
           Actualizar
         </Button>
       </Box>
@@ -120,7 +145,9 @@ function MessagePred() {
                   {message.text}
                 </TableCell>
                 <TableCell>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+                  >
                     <Chip
                       label={message.color}
                       size="small"

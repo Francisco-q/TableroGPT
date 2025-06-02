@@ -32,6 +32,7 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import { connectWebSocket } from "./socket"; 
 import WeeklyScheduler from "./components/WeeklyScheduler";
+import { connectMQTT } from "./mqttClient";
 
 const theme = createTheme({
   palette: {
@@ -132,7 +133,7 @@ function App() {
   });
 
   useEffect(() => {
-    connectWebSocket("192.168.1.122");
+  connectMQTT("ws://34.56.58.198:9001"); // WebSocket MQTT sobre puerto 9001
   }, []);
 
   return (
