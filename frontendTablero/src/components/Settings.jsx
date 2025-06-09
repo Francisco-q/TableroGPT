@@ -1,140 +1,135 @@
-import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useEffect, useState } from "react";
 import {
   Box,
   TextField,
   Button,
   Grid,
-  Slider,
   Typography,
-  FormControlLabel,
-  Switch,
   Paper,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
   Divider,
 } from "@mui/material";
-import { Save, Refresh } from "@mui/icons-material";
+import { Delete } from "@mui/icons-material";
+import mqtt from "mqtt";
 
 function Settings() {
-  const { control, handleSubmit, reset, watch } = useForm({
-    defaultValues: {
-      ipAddress: "",
-      port: "",
-      brightness: 5,
-      autoReconnect: false,
-      debugMode: false,
-    },
-  });
+  const [ip, setIp] = useState("");
+  const [port, setPort] = useState("9001");
+  const [topic, setTopic] = useState("panel/mensaje");
+  const [boards, setBoards] = useState([]);
+  const [messages, setMessages] = useState({}); // para manejar los mensajes por tablero
 
-  const [isSaving, setIsSaving] = useState(false);
-  const brightness = watch("brightness");
+  useEffect(() => {
+    const saved = localStorage.getItem("tableros");
+    if (saved) setBoards(JSON.parse(saved));
+  }, []);
 
-  const onSubmit = (data) => {
-    setIsSaving(true);
-    console.log("Form Data:", data);
-    // Simulate saving process
-    setTimeout(() => setIsSaving(false), 2000);
+  const handleAdd = () => {
+    if (ip && topic) {
+      const newList = [...boards, { ip, port, topic }];
+      setBoards(newList);
+      localStorage.setItem("tableros", JSON.stringify(newList));
+      setIp("");
+      setPort("9001");
+      setTopic("panel/mensaje");
+    }
+  };
+
+  const handleDelete = (index) => {
+    const newList = boards.filter((_, i) => i !== index);
+    setBoards(newList);
+    localStorage.setItem("tableros", JSON.stringify(newList));
+  };
+
+  const handleSendMessage = (index) => {
+    const { ip, port, topic } = boards[index];
+    const message = messages[index];
+
+    if (!message) return alert("Ingresa un mensaje antes de enviarlo");
+
+    const brokerUrl = `ws://${ip}:${port}`;
+    const client = mqtt.connect(brokerUrl);
+
+    client.on("connect", () => {
+      client.publish(topic, JSON.stringify({
+        message,
+        color: "white",
+        effect: "scroll",
+        speed: 3,
+      }), () => client.end());
+    });
+
+    client.on("error", (err) => {
+      console.error(`❌ Error conectando a ${ip}:${port} -`, err.message);
+    });
+  };
+
+  const handleInputChange = (index, value) => {
+    setMessages((prev) => ({ ...prev, [index]: value }));
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6} sx={{ width: "45%" }}>
-          <Controller
-            name="ipAddress"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                id="ipAddress"
-                label="Dirección IP del Tablero"
-                placeholder="192.168.1.100"
-              />
-            )}
-          />
-        </Grid>
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Configurar Tableros
+      </Typography>
 
-        <Grid item xs={12} md={6} sx={{ width: "45%" }}>
-          <Controller
-            name="port"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                id="port"
-                label="Puerto"
-                placeholder="8080"
-              />
-            )}
-          />
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
+        <Grid item xs={4}>
+          <TextField label="IP" fullWidth value={ip} onChange={(e) => setIp(e.target.value)} />
         </Grid>
-
-        <Grid item xs={12} sx={{ width: "100%" }}>
-          <Divider sx={{ my: 2 }} />
-          <Typography variant="subtitle1" gutterBottom>
-            Opciones Avanzadas
-          </Typography>
+        <Grid item xs={3}>
+          <TextField label="Puerto" fullWidth value={port} onChange={(e) => setPort(e.target.value)} />
         </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Controller
-              name="autoReconnect"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={<Switch {...field} color="primary" />}
-                  label="Reconexión Automática"
-                />
-              )}
-            />
-            <Typography variant="caption" color="text.secondary" display="block">
-              Intentar reconectar automáticamente si se pierde la conexión
-            </Typography>
-          </Paper>
+        <Grid item xs={5}>
+          <TextField label="Tópico MQTT" fullWidth value={topic} onChange={(e) => setTopic(e.target.value)} />
         </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Controller
-              name="debugMode"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={<Switch {...field} color="primary" />}
-                  label="Modo Debug"
-                />
-              )}
-            />
-            <Typography variant="caption" color="text.secondary" display="block">
-              Mostrar información de depuración en la consola
-            </Typography>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sx={{width: "100%"}}>
-          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<Refresh />}
-              onClick={() => reset()}
-            >
-              Restablecer
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              startIcon={<Save />}
-              disabled={isSaving}
-            >
-              {isSaving ? "Guardando..." : "Guardar Configuración"}
-            </Button>
-          </Box>
+        <Grid item xs={12} sx={{ textAlign: "right" }}>
+          <Button variant="contained" onClick={handleAdd}>Agregar</Button>
         </Grid>
       </Grid>
-    </form>
+
+      <Divider sx={{ my: 2 }} />
+      <Typography variant="subtitle1">Tableros Configurados:</Typography>
+
+      <Paper variant="outlined">
+        {boards.map((b, i) => (
+          <List key={i}>
+            <ListItem
+              secondaryAction={
+                <IconButton edge="end" onClick={() => handleDelete(i)}>
+                  <Delete />
+                </IconButton>
+              }
+            >
+              <ListItemText
+                primary={`${b.ip}:${b.port}`}
+                secondary={`Tópico: ${b.topic}`}
+              />
+            </ListItem>
+
+            <Box sx={{ px: 2, pb: 2, display: "flex", gap: 1 }}>
+              <TextField
+                label="Mensaje"
+                fullWidth
+                value={messages[i] || ""}
+                onChange={(e) => handleInputChange(i, e.target.value)}
+              />
+              <Button
+                variant="contained"
+                onClick={() => handleSendMessage(i)}
+              >
+                Enviar
+              </Button>
+            </Box>
+            <Divider />
+          </List>
+        ))}
+      </Paper>
+    </Box>
   );
 }
 
