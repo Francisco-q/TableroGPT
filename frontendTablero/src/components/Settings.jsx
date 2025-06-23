@@ -20,7 +20,7 @@ function Settings() {
   const [port, setPort] = useState("9001");
   const [topic, setTopic] = useState("panel/mensaje");
   const [boards, setBoards] = useState([]);
-  const [messages, setMessages] = useState({}); // para manejar los mensajes por tablero
+  const [messages, setMessages] = useState({});
 
   useEffect(() => {
     const saved = localStorage.getItem("tableros");
@@ -54,16 +54,12 @@ function Settings() {
     const client = mqtt.connect(brokerUrl);
 
     client.on("connect", () => {
-      client.publish(topic, JSON.stringify({
-        message,
-        color: "white",
-        effect: "scroll",
-        speed: 3,
-      }), () => client.end());
+      client.publish(topic, message, () => client.end());
     });
 
     client.on("error", (err) => {
       console.error(`❌ Error conectando a ${ip}:${port} -`, err.message);
+      client.end();
     });
   };
 

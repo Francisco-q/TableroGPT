@@ -148,7 +148,7 @@ function App() {
   });
 
   useEffect(() => {
-    connectMQTT("ws://34.56.58.198:9001");
+    connectMQTT("ws://34.61.188.47:9001");
   }, []);
 
   useEffect(() => {
