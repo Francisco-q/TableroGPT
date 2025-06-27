@@ -1,6 +1,16 @@
 # TableroGPT
 
-Control de Tablero LED  para monitoreo y envío de mensajes en tiempo real.
+<!-- Badges -->
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/flask-2.2%2B-informational?logo=flask)](https://flask.palletsprojects.com/)
+[![React](https://img.shields.io/badge/react-18%2B-blue?logo=react)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/vite-4%2B-purple?logo=vite)](https://vitejs.dev/)
+[![Material UI](https://img.shields.io/badge/material--ui-5%2B-blue?logo=mui)](https://mui.com/)
+[![React Router](https://img.shields.io/badge/react_router-6%2B-blue?logo=reactrouter)](https://reactrouter.com/)
+[![Node.js](https://img.shields.io/badge/node.js-16%2B-green?logo=node.js)](https://nodejs.org/)
+[![npm](https://img.shields.io/badge/npm-8%2B-red?logo=npm)](https://npmjs.com/)
+
+Control de Tablero LED para monitoreo y envío de mensajes en tiempo real.
 
 ## 📖 Descripción
 Este proyecto es una aplicación web full-stack que permite controlar y monitorear un tablero de LEDs desde una interfaz React/Vite, apoyada por una API REST construida con Python y Flask. Incluye autenticación de usuarios, historial de mensajes, configuración del sistema y estado en tiempo real.
